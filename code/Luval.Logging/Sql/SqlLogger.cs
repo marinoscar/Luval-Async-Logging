@@ -12,18 +12,18 @@ namespace Luval.Logging.Sql
     /// <summary>
     /// Writes logs messages with a IDbConnection
     /// </summary>
-    public class DbLogger : IDisposable
+    public class SqlLogger : IDisposable, ISlowLogger
     {
         private readonly IDbConnection _connection;
         private readonly IDialectProvider _dialectProvider;
 
 
         /// <summary>
-        /// Initialize an instance of <see cref="DbLogger"/>
+        /// Initialize an instance of <see cref="SqlLogger"/>
         /// </summary>
         /// <param name="connection">The <see cref="IDbConnection" instance to use to write to the database/></param>
         /// <param name="dialectProvider">The <see cref="IDialectProvider" used to create the proper sql statement/></param>
-        public DbLogger(IDbConnection connection, IDialectProvider dialectProvider)
+        public SqlLogger(IDbConnection connection, IDialectProvider dialectProvider)
         {
             if (connection == null) throw new ArgumentNullException(nameof(connection));
             if (dialectProvider == null) throw new ArgumentNullException(nameof(dialectProvider));
@@ -38,7 +38,7 @@ namespace Luval.Logging.Sql
         /// </summary>
         /// <param name="logMessage">The instance of the <see cref="LogMessage"/> to persist</param>
         /// <returns>A <see cref="Task"/> that represents the running operation</returns>
-        public Task PersistAsync(LogMessage logMessage,  CancellationToken cancelationToken)
+        public Task PersistAsync(LogMessage logMessage, CancellationToken cancelationToken)
         {
             return PersistAsync(logMessage, IsolationLevel.ReadCommitted, cancelationToken);
         }
@@ -51,7 +51,8 @@ namespace Luval.Logging.Sql
         /// <returns>A <see cref="Task"/> that represents the running operation</returns>
         public Task PersistAsync(LogMessage logMessage, IsolationLevel isolationLevel, CancellationToken cancelationToken)
         {
-            return Task.Run(() => {
+            return Task.Run(() =>
+            {
                 Persist(logMessage, isolationLevel);
             }, cancelationToken);
         }
@@ -120,7 +121,7 @@ namespace Luval.Logging.Sql
         /// </summary>
         public void Dispose()
         {
-            if(_connection != null)
+            if (_connection != null)
                 _connection.Dispose();
         }
     }
