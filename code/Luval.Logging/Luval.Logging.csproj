@@ -2,11 +2,33 @@
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Version>1.0.1</Version>
+    <Authors>Oscar Marin</Authors>
+    <Product>Luval Logging</Product>
+    <Description>Provides a way to wrap slow logger for asp.net that can run all messages in batch async using an implementation of the IHostedService interface for web workers</Description>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <PackageIcon>LV-Luval-Logo-200x200.png</PackageIcon>
+    <PackageIconUrl />
+    <RepositoryUrl>https://github.com/marinoscar/Luval-Async-Logging</RepositoryUrl>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageProjectUrl>https://github.com/marinoscar/Luval-Async-Logging</PackageProjectUrl>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\..\marin\code\img\LV-Luval-Logo-200x200.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+    <None Include="..\..\..\marin\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>

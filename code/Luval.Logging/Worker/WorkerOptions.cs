@@ -11,6 +11,7 @@ namespace Luval.Logging.Worker
     /// </summary>
     public class WorkerOptions
     {
+
         /// <summary>
         /// A <see cref="DateTimeOffset"/> of when the worker should start, if null, the worker starts immediately 
         /// </summary>

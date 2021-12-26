@@ -11,19 +11,64 @@ namespace Luval.Logging
     /// <summary>
     /// Provides an implementation of the <see cref="ILogger"/> interface that creates events every time the <seealso cref="Log{TState}(LogLevel, EventId, TState, Exception, Func{TState, Exception, string})" method is invoked/>
     /// </summary>
-    public class EventLogger : ILogger
+    public class EventHandlerLogger : ILogger
     {
         protected virtual string CategoryName { get; private set; }
         protected virtual IExternalScopeProvider ScopeProvider { get; private set; }
         protected virtual Func<string, LogLevel, bool> Filter { get; private set; }
 
         /// <summary>
-        /// Initialize an instance of <see cref="EventLogger"/>
+        /// Initialize an instance of <see cref="EventHandlerLogger"/>
+        /// </summary>
+        public EventHandlerLogger() : this(nameof(EventHandlerLogger), null, EmptyScope.Instance)
+        {
+
+        }
+
+        /// <summary>
+        /// Initialize an instance of <see cref="EventHandlerLogger"/>
+        /// </summary>
+        /// <param name="levelFilter">Indicates if any particular <see cref="LogLevel"/> should be filtered</param>
+        public EventHandlerLogger(Func<string, LogLevel, bool> levelFilter) : this(nameof(EventHandlerLogger), levelFilter, EmptyScope.Instance)
+        {
+
+        }
+
+        /// <summary>
+        /// Initialize an instance of <see cref="EventHandlerLogger"/>
+        /// </summary>
+        /// <param name="categoryName">Category name for the logger</param>
+        /// <param name="levelFilter">Indicates if any particular <see cref="LogLevel"/> should be filtered</param>
+        public EventHandlerLogger(string categoryName, Func<string, LogLevel, bool> levelFilter) : this(categoryName, levelFilter, EmptyScope.Instance)
+        {
+
+        }
+
+        /// <summary>
+        /// Initialize an instance of <see cref="EventHandlerLogger"/>
+        /// </summary>
+        /// <param name="scopeProvider">The <see cref="IExternalScopeProvider" to use/></param>
+        public EventHandlerLogger(IExternalScopeProvider scopeProvider) : this(nameof(EventHandlerLogger), null, scopeProvider)
+        {
+        }
+
+        /// <summary>
+        /// Initialize an instance of <see cref="EventHandlerLogger"/>
+        /// </summary>
+        /// <param name="levelFilter">Indicates if any particular <see cref="LogLevel"/> should be filtered</param>
+        /// <param name="scopeProvider">The <see cref="IExternalScopeProvider" to use/></param>
+        public EventHandlerLogger(Func<string, LogLevel, bool> levelFilter, IExternalScopeProvider scopeProvider) : this(nameof(EventHandlerLogger), levelFilter, scopeProvider)
+        {
+        }
+
+
+        /// <summary>
+        /// Initialize an instance of <see cref="EventHandlerLogger"/>
         /// </summary>
         /// <param name="categoryName">Category name for the logger</param>
         /// <param name="levelFilter">Indicates if any particular <see cref="LogLevel"/> should be filtered</param>
         /// <param name="scopeProvider">The <see cref="IExternalScopeProvider" to use/></param>
-        public EventLogger(string categoryName, Func<string, LogLevel, bool> levelFilter, IExternalScopeProvider scopeProvider)
+        public EventHandlerLogger(string categoryName, Func<string, LogLevel, bool> levelFilter, IExternalScopeProvider scopeProvider)
         {
             CategoryName = categoryName; ScopeProvider = scopeProvider; Filter = levelFilter;
         }
@@ -38,9 +83,9 @@ namespace Luval.Logging
 
         public bool IsEnabled(LogLevel logLevel)
         {
-            if (Filter == null) return true;
             if (logLevel == LogLevel.None)
                 return false;
+            if (Filter == null) return true;
             return Filter(CategoryName, logLevel);
         }
 
@@ -68,7 +113,7 @@ namespace Luval.Logging
     }
 
     /// <summary>
-    /// Provdes the event data for the <see cref="EventLogger" class/>
+    /// Provdes the event data for the <see cref="EventHandlerLogger" class/>
     /// </summary>
     public class LogEventArgs : EventArgs
     {
