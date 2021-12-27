@@ -15,62 +15,24 @@ namespace Luval.Logging
     {
         protected virtual string CategoryName { get; private set; }
         protected virtual IExternalScopeProvider ScopeProvider { get; private set; }
-        protected virtual Func<string, LogLevel, bool> Filter { get; private set; }
+        protected virtual Func<string, LogLevel, bool> LevelFilter { get; private set; }
 
         /// <summary>
         /// Initialize an instance of <see cref="EventHandlerLogger"/>
         /// </summary>
-        public EventHandlerLogger() : this(nameof(EventHandlerLogger), null, EmptyScope.Instance)
+        public EventHandlerLogger() : this(new EventHandlerLoggerOptions())
         {
 
         }
 
-        /// <summary>
-        /// Initialize an instance of <see cref="EventHandlerLogger"/>
-        /// </summary>
-        /// <param name="levelFilter">Indicates if any particular <see cref="LogLevel"/> should be filtered</param>
-        public EventHandlerLogger(Func<string, LogLevel, bool> levelFilter) : this(nameof(EventHandlerLogger), levelFilter, EmptyScope.Instance)
-        {
-
-        }
 
         /// <summary>
         /// Initialize an instance of <see cref="EventHandlerLogger"/>
         /// </summary>
-        /// <param name="categoryName">Category name for the logger</param>
-        /// <param name="levelFilter">Indicates if any particular <see cref="LogLevel"/> should be filtered</param>
-        public EventHandlerLogger(string categoryName, Func<string, LogLevel, bool> levelFilter) : this(categoryName, levelFilter, EmptyScope.Instance)
+        /// <param name="options">A <see cref="EventHandlerLoggerOptions"/> with the <see cref="EventHandlerLogger"/> configuration</param>
+        public EventHandlerLogger(EventHandlerLoggerOptions options)
         {
-
-        }
-
-        /// <summary>
-        /// Initialize an instance of <see cref="EventHandlerLogger"/>
-        /// </summary>
-        /// <param name="scopeProvider">The <see cref="IExternalScopeProvider" to use/></param>
-        public EventHandlerLogger(IExternalScopeProvider scopeProvider) : this(nameof(EventHandlerLogger), null, scopeProvider)
-        {
-        }
-
-        /// <summary>
-        /// Initialize an instance of <see cref="EventHandlerLogger"/>
-        /// </summary>
-        /// <param name="levelFilter">Indicates if any particular <see cref="LogLevel"/> should be filtered</param>
-        /// <param name="scopeProvider">The <see cref="IExternalScopeProvider" to use/></param>
-        public EventHandlerLogger(Func<string, LogLevel, bool> levelFilter, IExternalScopeProvider scopeProvider) : this(nameof(EventHandlerLogger), levelFilter, scopeProvider)
-        {
-        }
-
-
-        /// <summary>
-        /// Initialize an instance of <see cref="EventHandlerLogger"/>
-        /// </summary>
-        /// <param name="categoryName">Category name for the logger</param>
-        /// <param name="levelFilter">Indicates if any particular <see cref="LogLevel"/> should be filtered</param>
-        /// <param name="scopeProvider">The <see cref="IExternalScopeProvider" to use/></param>
-        public EventHandlerLogger(string categoryName, Func<string, LogLevel, bool> levelFilter, IExternalScopeProvider scopeProvider)
-        {
-            CategoryName = categoryName; ScopeProvider = scopeProvider; Filter = levelFilter;
+            CategoryName = options.CategoryName; ScopeProvider = options.ScopeProvider; LevelFilter = options.LevelFilter;
         }
 
         /// <summary>
@@ -85,8 +47,8 @@ namespace Luval.Logging
         {
             if (logLevel == LogLevel.None)
                 return false;
-            if (Filter == null) return true;
-            return Filter(CategoryName, logLevel);
+            if (LevelFilter == null) return true;
+            return LevelFilter(CategoryName, logLevel);
         }
 
         /// <summary>
