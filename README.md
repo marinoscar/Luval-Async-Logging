@@ -33,3 +33,28 @@ services.AddSingleton(new WorkerOptions() { Interval = TimeSpan.FromMinutes(1) }
 //Initializes the IHostedService
 services.AddHostedService<EventHandlerLoggerWorker>();
 ```
+## Database table script
+```sql
+IF OBJECT_ID('LogMessage', 'U') IS NOT NULl
+	DROP TABLE LogMessage
+GO
+
+CREATE TABLE LogMessage(
+	Id bigint NOT NULL IDENTITY(1,1),
+	MachineName varchar(100) NOT NULL,
+	UtcTimestamp datetime NOT NULL,
+	MessageType int NOT NULL,
+	Logger varchar(255) NULL,
+	[Message] varchar(max) NULL,
+	[Exception] varchar(max) NULL,
+
+	CONSTRAINT PK_LogMessage
+		PRIMARY KEY CLUSTERED (Id),
+	INDEX IX_LogMessage_Time (UtcTimestamp)
+)
+```
+
+## Sample table result
+This is an example of how the [LogMessage](https://github.com/marinoscar/Luval-Async-Logging/blob/main/code/Luval.Logging/Entities/LogMessage.cs "LogMessage") class gets persisted in the SQL table
+
+[![Sample](https://raw.githubusercontent.com/marinoscar/Luval-Async-Logging/main/resources/docs/img01.PNG "Sample")](https://raw.githubusercontent.com/marinoscar/Luval-Async-Logging/main/resources/docs/img01.PNG "Sample")
