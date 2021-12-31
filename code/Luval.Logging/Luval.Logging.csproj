@@ -13,6 +13,8 @@
     <RepositoryUrl>https://github.com/marinoscar/Luval-Async-Logging</RepositoryUrl>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/marinoscar/Luval-Async-Logging</PackageProjectUrl>
+    <AssemblyVersion>1.0.1.21364</AssemblyVersion>
+    <FileVersion>1.0.1.21364</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
