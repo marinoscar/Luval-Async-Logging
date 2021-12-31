@@ -1,5 +1,5 @@
 ﻿using Luval.Logging.Entities;
-using Luval.Logging.Sql;
+using Luval.Logging.Stores;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
@@ -15,7 +15,7 @@ namespace Luval.Logging.Worker
     /// <summary>
     /// Provides a background worker implementation to write async log messages to slow targets like SQL databases or others
     /// </summary>
-    public class LogWorker : IHostedService, IDisposable
+    public class EventHandlerLoggerWorker : IHostedService, IDisposable
     {
 
         private readonly CancellationTokenSource _stoppingCts = new CancellationTokenSource();
@@ -23,34 +23,44 @@ namespace Luval.Logging.Worker
 
         private Task _executingTask;
         private readonly EventHandlerLogger _eventLogger;
-        private readonly ISlowLogger _slowLogger;
+        private readonly ILoggingStore _loggingStore;
         private readonly WorkerOptions _options;
         private Timer _timer;
         private readonly TimeSpan _dueTime;
+        private static bool _subscribed;
 
 
         /// <summary>
-        /// Initailizes an instance of <see cref="LogWorker"/>
+        /// Initailizes an instance of <see cref="EventHandlerLoggerWorker"/>
         /// </summary>
-        /// <param name="eventLogger">The singleton <see cref="EventHandlerLogger"/> use to queue the <see cref="LogMessage"/> coming from the <see cref="ILogger"/> implementation</param>
-        /// <param name="slowLogger">The <see cref="ISlowLogger"/> implementation that will persists the <see cref="LogMessage"/> comming from the <see cref="ILogger"/></param>
-        /// <param name="options">A <see cref="WorkerOptions"/> object with the <see cref="LogWorker"/> configuration options</param>
+        /// <param name="loggingStore">The <see cref="ILoggerStore"/> implementation that will persists the <see cref="LogMessage"/> comming from the <see cref="ILogger"/></param>
+        /// <param name="options">A <see cref="WorkerOptions"/> object with the <see cref="EventHandlerLoggerWorker"/> configuration options</param>
         /// <remarks>Requires that <see cref="EventHandlerLogger"/> is registered in the host as a singleton</remarks>
-        public LogWorker(EventHandlerLogger eventLogger, ISlowLogger slowLogger, WorkerOptions options)
+        public EventHandlerLoggerWorker(ILoggingStore loggingStore, WorkerOptions options)
         {
-            if (eventLogger == null) throw new ArgumentNullException(nameof(eventLogger));
-            if (slowLogger == null) throw new ArgumentNullException(nameof(slowLogger));
+            if (loggingStore == null) throw new ArgumentNullException(nameof(loggingStore));
             if (options == null) throw new ArgumentNullException(nameof(options));
 
-            _eventLogger = eventLogger;
-            _slowLogger = slowLogger;
+            _loggingStore = loggingStore;
             _options = options;
 
             if (_options.StartTime != null && _options.StartTime.Value.UtcDateTime > DateTime.UtcNow)
                 _dueTime = _options.StartTime.Value.UtcDateTime.Subtract(DateTime.UtcNow);
             else _dueTime = TimeSpan.Zero;
 
-            _eventLogger.MessageLogged += MessageRecieved;
+            SubscribeToEvents();
+        }
+
+        /// <summary>
+        /// Subscribes to all of the <see cref="LogMessage"/> events created by all of the <see cref="EventHandlerLogger"/> instances in the 
+        /// </summary>
+        public void SubscribeToEvents()
+        {
+            if (!_subscribed)
+            {
+                MessageLogEvents.Instance.MessageLogged += MessageRecieved;
+                _subscribed = true;
+            }
         }
 
         /// <summary>
@@ -106,13 +116,13 @@ namespace Luval.Logging.Worker
             return Task.Run(() =>
             {
                 var count = 0;
-                while (_messages.Count > 0 || (_options.MaxMessagedPerCycle > 0 && count < _options.MaxMessagedPerCycle))
+                while (_messages.Count > 0 && (_options.MaxMessagedPerCycle > 0 && count < _options.MaxMessagedPerCycle))
                 {
                     if (_messages.TryPop(out LogMessage m))
                     {
                         //persist the messages async until there are no pending or
                         //the max per cycle is reached
-                        _slowLogger.PersistAsync(m, stoppingToken);
+                        _loggingStore.PersistAsync(m, stoppingToken);
                     }
                     count++;
                 }

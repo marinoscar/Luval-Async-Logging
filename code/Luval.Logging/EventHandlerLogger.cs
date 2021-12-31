@@ -62,55 +62,8 @@ namespace Luval.Logging
         /// <param name="formatter">Function to create a <see cref="string"/> message of the state and exception</param>
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
         {
-            OnMessageLogged(new LogEventArgs(LogMessage.Create(CategoryName,
-                logLevel, eventId, exception, formatter(state, exception))));
-        }
-
-        public event EventHandler<LogEventArgs> MessageLogged;
-
-        protected virtual void OnMessageLogged(LogEventArgs e)
-        {
-            MessageLogged?.Invoke(this, e);
-        }
-    }
-
-    /// <summary>
-    /// Provdes the event data for the <see cref="EventHandlerLogger" class/>
-    /// </summary>
-    public class LogEventArgs : EventArgs
-    {
-        /// <summary>
-        /// Initializes a new instance of <see cref="LogEventArgs"/>
-        /// </summary>
-        /// <param name="logMessage">The <see cref="LogMessage"/> to pass as the event data</param>
-        public LogEventArgs(LogMessage logMessage)
-        {
-            LogMessage = logMessage;
-        }
-
-        public LogMessage LogMessage { get; private set; }
-    }
-
-    internal class EmptyScope : IExternalScopeProvider, IDisposable
-    {
-        public static EmptyScope Instance { get; } = new EmptyScope();
-
-        private EmptyScope()
-        {
-        }
-
-        /// <inheritdoc />
-        public void Dispose()
-        {
-        }
-
-        public void ForEachScope<TState>(Action<object, TState> callback, TState state)
-        {
-        }
-
-        public IDisposable Push(object state)
-        {
-            return null;
+            MessageLogEvents.Instance.DoLogMessage(this, LogMessage.Create(CategoryName,
+                logLevel, eventId, exception, formatter(state, exception)));
         }
     }
 }

@@ -2,34 +2,34 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Luval.Logging.Sql
+namespace Luval.Logging.Stores.Sql
 {
     /// <summary>
-    /// Writes logs messages with a IDbConnection
+    /// Writes logs messages to a <see cref="IDbConnection"/> data store
     /// </summary>
-    public class SqlLogger : IDisposable, ISlowLogger
+    public class SqlLogger : ILoggingStore
     {
-        private readonly IDbConnection _connection;
+        private readonly Func<IDbConnection> _createConnection;
         private readonly IDialectProvider _dialectProvider;
 
 
         /// <summary>
         /// Initialize an instance of <see cref="SqlLogger"/>
         /// </summary>
-        /// <param name="connection">The <see cref="IDbConnection" instance to use to write to the database/></param>
+        /// <param name="createConnection">A function reference that will createa a new instance of <see cref="IDbConnection"/></param>
         /// <param name="dialectProvider">The <see cref="IDialectProvider" used to create the proper sql statement/></param>
-        public SqlLogger(IDbConnection connection, IDialectProvider dialectProvider)
+        public SqlLogger(Func<IDbConnection> createConnection, IDialectProvider dialectProvider)
         {
-            if (connection == null) throw new ArgumentNullException(nameof(connection));
+            if (createConnection == null) throw new ArgumentNullException(nameof(createConnection));
             if (dialectProvider == null) throw new ArgumentNullException(nameof(dialectProvider));
-            if (string.IsNullOrWhiteSpace(connection.ConnectionString)) throw new ArgumentException("connection requires a connection string");
 
-            _connection = connection;
+            _createConnection = createConnection;
             _dialectProvider = dialectProvider;
         }
 
@@ -79,50 +79,48 @@ namespace Luval.Logging.Sql
 
         private void ExecuteCommand(string sqlCmd, IsolationLevel isolationLevel)
         {
-            using (var cmd = _connection.CreateCommand())
+            using (var cnn = _createConnection())
             {
-                using (var tran = _connection.BeginTransaction(isolationLevel))
+                using (var cmd = cnn.CreateCommand())
                 {
-                    cmd.CommandText = sqlCmd;
-                    cmd.CommandTimeout = _connection.ConnectionTimeout;
-                    OpenConnection();
-                    try
+                    OpenConnection(cnn);
+                    using (var tran = cnn.BeginTransaction(isolationLevel))
                     {
-                        cmd.ExecuteNonQuery();
-                        tran.Commit();
-                    }
-                    catch (Exception ex)
-                    {
-                        tran.Rollback();
-                        throw new Exception("Unable to execute the sql command", ex);
-                    }
-                    finally
-                    {
-                        CloseConnection();
+                        cmd.Transaction = tran;
+                        cmd.CommandText = sqlCmd;
+                        cmd.CommandTimeout = cnn.ConnectionTimeout;
+                        try
+                        {
+                            cmd.ExecuteNonQuery();
+                            tran.Commit();
+                        }
+                        catch (Exception ex)
+                        {
+                            tran.Rollback();
+                            Debug.WriteLine(ex.ToString());
+                            throw new Exception("Unable to execute the sql command", ex);
+                        }
+                        finally
+                        {
+                            CloseConnection(cnn);
+                        }
                     }
                 }
             }
         }
 
-        private void OpenConnection()
+        private void OpenConnection(IDbConnection databaseConnection)
         {
-            if (_connection.State == ConnectionState.Closed)
-                _connection.Open();
+            if (databaseConnection == null) throw new ArgumentNullException(nameof(databaseConnection));
+            if (string.IsNullOrWhiteSpace(databaseConnection.ConnectionString)) throw new ArgumentNullException("ConnectionString");
+            if (databaseConnection.State == ConnectionState.Closed)
+                databaseConnection.Open();
         }
 
-        private void CloseConnection()
+        private void CloseConnection(IDbConnection cnn)
         {
-            if (_connection.State != ConnectionState.Closed)
-                _connection.Close();
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public void Dispose()
-        {
-            if (_connection != null)
-                _connection.Dispose();
+            if (cnn.State != ConnectionState.Closed)
+                cnn.Close();
         }
     }
 }

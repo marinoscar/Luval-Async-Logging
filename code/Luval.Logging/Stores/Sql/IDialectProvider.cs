@@ -1,6 +1,6 @@
 ﻿using Luval.Logging.Entities;
 
-namespace Luval.Logging.Sql
+namespace Luval.Logging.Stores.Sql
 {
     public interface IDialectProvider
     {

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Luval.Logging
@@ -13,8 +14,6 @@ namespace Luval.Logging
     public class EventHandlerLoggerProvider : ILoggerProvider
     {
         private readonly EventHandlerLoggerOptions _options;
-        //private static Dictionary<string, EventHandlerLogger> _loggers = new();
-        private static EventHandlerLogger _logger;
 
         /// <summary>
         /// Initializes a new instance of <see cref="EventHandlerLoggerProvider"/>
@@ -32,7 +31,6 @@ namespace Luval.Logging
         {
             if (options == null) throw new ArgumentNullException(nameof(options));
             _options = options;
-            _logger = new EventHandlerLogger(_options);
         }
 
         /// <summary>
@@ -42,15 +40,12 @@ namespace Luval.Logging
         /// <returns>The instance of <see cref="ILogger"/> that was created</returns>
         public ILogger CreateLogger(string categoryName)
         {
-            //if (string.IsNullOrWhiteSpace(categoryName)) categoryName = _options.CategoryName;
-            //if (_loggers.ContainsKey(categoryName)) return _loggers[categoryName];
-
-            //_loggers[categoryName] = new EventHandlerLogger(new EventHandlerLoggerOptions() { 
-            //    CategoryName = categoryName, LevelFilter = _options.LevelFilter, ScopeProvider = _options.ScopeProvider
-            //});
-
-            //return _loggers[categoryName];
-            return _logger;
+            return new EventHandlerLogger(new EventHandlerLoggerOptions()
+            {
+                CategoryName = categoryName,
+                LevelFilter = _options.LevelFilter,
+                ScopeProvider = _options.ScopeProvider
+            });
         }
 
         public void Dispose()
