@@ -37,6 +37,7 @@ namespace Luval.Logging.Stores.Sql
         /// Persists the <see cref="LogMessage"/> into the database
         /// </summary>
         /// <param name="logMessage">The instance of the <see cref="LogMessage"/> to persist</param>
+        /// <param name="cancelationToken">A cancellation token that can be used to cancel the work if it has not yet started.</param>
         /// <returns>A <see cref="Task"/> that represents the running operation</returns>
         public Task PersistAsync(LogMessage logMessage, CancellationToken cancelationToken)
         {
@@ -48,6 +49,7 @@ namespace Luval.Logging.Stores.Sql
         /// </summary>
         /// <param name="logMessage">The instance of the <see cref="LogMessage"/> to persist</param>
         /// <param name="isolationLevel">One of the <see cref="IsolationLevel"/> values</param>
+        /// <param name="cancelationToken">A cancellation token that can be used to cancel the work if it has not yet started.</param>
         /// <returns>A <see cref="Task"/> that represents the running operation</returns>
         public Task PersistAsync(LogMessage logMessage, IsolationLevel isolationLevel, CancellationToken cancelationToken)
         {
@@ -77,8 +79,32 @@ namespace Luval.Logging.Stores.Sql
             ExecuteCommand(_dialectProvider.ToSqlInsert(logMessage), isolationLevel);
         }
 
-        private void ExecuteCommand(string sqlCmd, IsolationLevel isolationLevel)
+
+        /// <summary>
+        /// Purgers log messages from the data store
+        /// </summary>
+        /// <param name="logRetentionInHours">The number of hours of logs to keep in the store</param>
+        /// <returns>The number of affected records</returns>
+        public int PurgeLogs(int logRetentionInHours)
         {
+            var dt = DateTime.UtcNow.AddHours(logRetentionInHours * -1);
+            return ExecuteCommand(_dialectProvider.ToSqlDeleteByTimestamp(dt), IsolationLevel.ReadCommitted);
+        }
+
+        /// <summary>
+        /// Purgers log messages from the data store
+        /// </summary>
+        /// <param name="logRetentionInHours">The number of hours of logs to keep in the store</param>
+        /// <param name="cancelationToken">A cancellation token that can be used to cancel the work if it has not yet started.</param>
+        /// <returns>A <see cref="Task"/> with the operation for the number of affected records</returns>
+        public Task<int> PurgeLogsAsync(int logRetentionInHours, CancellationToken cancellationToken)
+        {
+            return Task.Run(() => { return PurgeLogs(logRetentionInHours); }, cancellationToken);
+        }
+
+        private int ExecuteCommand(string sqlCmd, IsolationLevel isolationLevel)
+        {
+            var result = 0;
             using (var cnn = _createConnection())
             {
                 using (var cmd = cnn.CreateCommand())
@@ -91,7 +117,7 @@ namespace Luval.Logging.Stores.Sql
                         cmd.CommandTimeout = cnn.ConnectionTimeout;
                         try
                         {
-                            cmd.ExecuteNonQuery();
+                            result = cmd.ExecuteNonQuery();
                             tran.Commit();
                         }
                         catch (Exception ex)
@@ -107,6 +133,7 @@ namespace Luval.Logging.Stores.Sql
                     }
                 }
             }
+            return result;
         }
 
         private void OpenConnection(IDbConnection databaseConnection)

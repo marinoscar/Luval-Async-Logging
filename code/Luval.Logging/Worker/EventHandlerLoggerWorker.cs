@@ -22,12 +22,13 @@ namespace Luval.Logging.Worker
         private readonly ConcurrentStack<LogMessage> _messages = new ConcurrentStack<LogMessage>();
 
         private Task _executingTask;
-        private readonly EventHandlerLogger _eventLogger;
+        private Task _purgeTask;
         private readonly ILoggingStore _loggingStore;
         private readonly WorkerOptions _options;
         private Timer _timer;
         private readonly TimeSpan _dueTime;
         private static bool _subscribed;
+        private DateTime? _dtOfLastPurge;
 
 
         /// <summary>
@@ -108,6 +109,15 @@ namespace Luval.Logging.Worker
 
         private void DoWork(object? state)
         {
+            if(_options.LogRetentionInHours > 0)
+            {
+                if (_dtOfLastPurge == null) _dtOfLastPurge = DateTime.UtcNow;
+                if(DateTime.UtcNow.Subtract(_dtOfLastPurge.Value).TotalHours > 4)
+                {
+                    _dtOfLastPurge = DateTime.UtcNow;
+                    _purgeTask = DoPurge(_stoppingCts.Token);
+                }
+            }
             _executingTask = ExecuteAsync(_stoppingCts.Token);
         }
 
@@ -126,6 +136,13 @@ namespace Luval.Logging.Worker
                     }
                     count++;
                 }
+            }, stoppingToken);
+        }
+
+        private Task DoPurge(CancellationToken stoppingToken)
+        {
+            return Task.Run(() => {
+                _loggingStore.PurgeLogsAsync(_options.LogRetentionInHours, stoppingToken);
             }, stoppingToken);
         }
     }

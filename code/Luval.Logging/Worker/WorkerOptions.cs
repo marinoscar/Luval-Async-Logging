@@ -19,6 +19,7 @@ namespace Luval.Logging.Worker
             StartTime = null;
             Interval = TimeSpan.FromSeconds(15);
             MaxMessagedPerCycle = 60;
+            LogRetentionInHours = 168;
         }
 
         /// <summary>
@@ -33,5 +34,9 @@ namespace Luval.Logging.Worker
         /// Indetify the max number of messages that would be processed per interval cycle, defaults to 60
         /// </summary>
         public int MaxMessagedPerCycle { get; set; }
+        /// <summary>
+        /// Identifies the number of hours the logs will be persited in the store, defaults to 168
+        /// </summary>
+        public int LogRetentionInHours { get; set; }
     }
 }

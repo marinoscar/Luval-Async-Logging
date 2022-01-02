@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>1.0.1</Version>
+    <Version>1.0.2</Version>
     <Authors>Oscar Marin</Authors>
     <Product>Luval Logging</Product>
     <Description>Provides a way to wrap slow logger for asp.net that can run all messages in batch async using an implementation of the IHostedService interface for web workers</Description>
@@ -13,8 +13,9 @@
     <RepositoryUrl>https://github.com/marinoscar/Luval-Async-Logging</RepositoryUrl>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/marinoscar/Luval-Async-Logging</PackageProjectUrl>
-    <AssemblyVersion>1.0.1.21364</AssemblyVersion>
-    <FileVersion>1.0.1.21364</FileVersion>
+    <AssemblyVersion>1.0.2.22002</AssemblyVersion>
+    <FileVersion>1.0.2.22002</FileVersion>
+    <PackageReleaseNotes>Included parameters to purge the log data store</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
